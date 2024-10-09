@@ -1,0 +1,62 @@
+<style>
+	ul.sub-data {
+		list-style: none;
+		display: table;
+		padding-left: 0;
+	}
+
+	ul.sub-data li {
+		display: table-row;
+	}
+
+	ul.sub-data li b {
+		display: table-cell;
+		padding-right: 1em;
+	}
+</style>
+
+<eos-container header="Subscription Info" class="setting-padtop">
+	<p>
+	<div ng-if="fetchingSubscriptionData === true">
+		<strong><em>Fetching subscription info...</em></strong>
+	</div>
+	<div ng-if="fetchingSubscriptionData === false">
+		<ul class="sub-data">
+			<li><b>Current Plan:</b>
+				{{subscriptionData.current_plan}}</li>
+			<li><b>Characters used:</b>{{subscriptionData.character_usage_formatted}}
+			</li>
+			<li><b>Reset date:</b>
+				{{subscriptionData.renewal_time_formatted}}</li>
+		</ul>
+	</div>
+	</p>
+</eos-container>
+
+<eos-container header="Voice" class="setting-padtop">
+	<p>These are the available voices your provided API key has access to.</p>
+	<ui-select ng-model="effect.voice">
+		<ui-select-match placeholder="">{{$select.selected.name}}</ui-select-match>
+		<ui-select-choices repeat="voice in voices | filter: $select.search">
+			<div>
+				<strong ng-bind-html="voice.name | highlight: $select.search"></strong>
+				<em ng-bind-html="'(' + voice.metadata + ')' | highlight: $select.search"></em>
+			</div>
+		</ui-select-choices>
+	</ui-select>
+</eos-container>
+
+<eos-container header="Text" pad-top="true">
+	<textarea ng-model="effect.text" class="form-control" name="text" placeholder="Enter text to synthesize" rows="4"
+		cols="40" replace-variables menu-position="under"></textarea>
+</eos-container>
+
+<eos-container header="Wait For Generation" pad-top="true">
+	<p>
+		Waits for the generation to finish before continuing with other effects.
+	</p>
+	<label class="control-fb control--checkbox"> Wait For Generation
+		<input type="checkbox" ng-model="effect.waitForGeneration">
+		<div class="control__indicator"></div>
+	</label>
+</eos-container>
