@@ -38,7 +38,6 @@ class TTSMonster {
 	public frontendListeners: FrontendListener[];
 
 	public constructor() {
-
 		this.frontendListeners = [
 			{
 				eventName: 'tts-monster-get-voices',

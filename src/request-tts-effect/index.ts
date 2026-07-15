@@ -91,7 +91,9 @@ const effect: EffectType<EffectModel> = {
 			return false;
 		}
 
-		ttsMonster.setup();
+		if (!ttsMonster.setup()) {
+			return false;
+		}
 
 		const ttsToken = crypto.randomUUID();
 
