@@ -1,22 +1,13 @@
-import TTSMonster, {
-	TTSMonsterSubscriptionData
-} from './tts-monster-api';
-import {
-	v4 as uuid
-} from 'uuid';
 import * as fs from 'fs-extra';
 
+import firebot, { EffectType } from '@crowbartools/firebot-types';
+import template from './template.html';
 import {
-	Effects
-} from '@crowbartools/firebot-custom-scripts-types/types/effects';
-import template from './request-tts.html';
-import {
-	modules, parameters, tts_promises
-} from './main';
-import EffectType = Effects.EffectType;
-import {
-	TTSMonsterVoice
-} from './tts-monster-api';
+	TTSMonsterSubscriptionData,
+	TTSMonsterVoice,
+	ttsMonster
+} from '../tts-monster-api';
+import path from 'path';
 
 interface EffectModel {
 	voice: TTSMonsterVoice;
@@ -37,11 +28,11 @@ const effect: EffectType<EffectModel> = {
 			'integrations'
 		],
 		// @ts-ignore
-		outputs: [ {
+		outputs: [{
 			label: 'TTS Token',
 			description: 'The TTS token to use for the play effect',
 			defaultName: 'ttsToken'
-		} ]
+		}]
 	},
 	optionsTemplate: template,
 	optionsController: ($scope, utilityService: any, backendCommunicator: any, $q: any, $timeout: any) => {
@@ -83,52 +74,51 @@ const effect: EffectType<EffectModel> = {
 
 		return errors;
 	},
-	onTriggerEvent: async scope => {
-		const effect = scope.effect;
+	onTriggerEvent: async event => {
+		const effect = event.effect;
 
 		const voice_id = effect.voice.voice_id;
 
-		if (!parameters.api_key.length || !voice_id.length) {
-			modules.logger.error('No API key or Voice ID specified.');
+		if (!!voice_id.length) {
+			firebot.logger.error('No Voice ID specified.');
 
 			return false;
 		}
 
 		if (!effect.text.length) {
-			modules.logger.error('No text specified.');
+			firebot.logger.error('No text specified.');
 
 			return false;
 		}
 
-		const api = TTSMonster.instance;
-		api.setup(parameters.api_key);
+		ttsMonster.setup();
 
-		const ttsToken = uuid();
+		const ttsToken = crypto.randomUUID();
 
 		let wavPath = undefined;
 		try {
-			const TTS_MONSTER_TMP_DIR = modules.path.join(SCRIPTS_DIR, '..', 'tmp', 'ttsmonster');
+			const TTS_MONSTER_TMP_DIR = path.join(firebot.storage.path, '..', '..', 'tmp', 'ttsmonster');
 
 			if (!(await fs.pathExists(TTS_MONSTER_TMP_DIR))) {
 				await fs.mkdirp(TTS_MONSTER_TMP_DIR);
 			}
 
-			wavPath = modules.path.join(TTS_MONSTER_TMP_DIR, `${ ttsToken }.wav`);
+			wavPath = path.join(TTS_MONSTER_TMP_DIR, `${ttsToken}.wav`);
 		}
 		catch (err) {
-			modules.logger.error('Unable to prepare temp folder', err);
+			firebot.logger.error('Unable to prepare temp folder', err);
 
 			return false;
 		}
 
 		try {
-			const tts = api.textToSpeech({
+			const tts = ttsMonster.textToSpeech({
 				voice_id,
 				fileName: wavPath,
 				message: effect.text
 			});
 
-			tts_promises.set(ttsToken, tts);
+			ttsMonster.tts_promises.set(ttsToken, tts);
 
 			if (effect.waitForGeneration) {
 				await tts;
@@ -142,7 +132,7 @@ const effect: EffectType<EffectModel> = {
 			};
 		}
 		catch (err) {
-			modules.logger.error('Unable to save TTS', err);
+			firebot.logger.error('Unable to save TTS', err);
 
 			return false;
 		}

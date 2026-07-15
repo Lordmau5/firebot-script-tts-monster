@@ -1,13 +1,7 @@
+import firebot, { EffectType, FirebotAudioDevice } from '@crowbartools/firebot-types';
+import template from './template.html';
+import { ttsMonster } from '../tts-monster-api';
 import * as fs from 'fs-extra';
-
-import {
-	Effects
-} from '@crowbartools/firebot-custom-scripts-types/types/effects';
-import template from './play-tts.html';
-import {
-	modules, settings, parameters, tts_promises
-} from './main';
-import EffectType = Effects.EffectType;
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -22,10 +16,7 @@ interface EffectModel {
 interface OverlayData {
 	overlayInstance: string;
 	volume: number;
-	audioOutputDevice: {
-		deviceId: string;
-		label: string;
-	};
+	audioOutputDevice: FirebotAudioDevice;
 }
 
 const effect: EffectType<EffectModel & OverlayData> = {
@@ -58,29 +49,29 @@ const effect: EffectType<EffectModel & OverlayData> = {
 
 		return errors;
 	},
-	onTriggerEvent: async scope => {
-		const effect = scope.effect;
+	onTriggerEvent: async event => {
+		const effect = event.effect;
 
 		const tts_token = effect.tts_token;
 
 		if (!tts_token.length) {
-			modules.logger.error('No TTS token specified.');
+			firebot.logger.error('No TTS token specified.');
 
 			return false;
 		}
 
-		if (!tts_promises.has(tts_token)) {
-			modules.logger.error('No TTS with this TTS token was requested.');
+		if (!ttsMonster.tts_promises.has(tts_token)) {
+			firebot.logger.error('No TTS with this TTS token was requested.');
 
 			return false;
 		}
 
-		const promise_result = await tts_promises.get(tts_token);
+		const promise_result = await ttsMonster.tts_promises.get(tts_token);
 
-		tts_promises.delete(tts_token);
+		ttsMonster.tts_promises.delete(tts_token);
 
 		if (promise_result.status !== 'ok') {
-			modules.logger.error('TTS request failed.');
+			firebot.logger.error('TTS request failed.');
 
 			return false;
 		}
@@ -88,21 +79,21 @@ const effect: EffectType<EffectModel & OverlayData> = {
 		const data: {
 			filepath: string;
 			volume: number;
-			audioOutputDevice: OverlayData['audioOutputDevice'];
+			audioOutputDevice: FirebotAudioDevice;
 			overlayInstance: string;
 			resourceToken?: string
 		} = {
 			filepath: promise_result.fileName,
-			volume: scope.effect.volume,
-			audioOutputDevice: scope.effect.audioOutputDevice,
-			overlayInstance: scope.effect.overlayInstance
+			volume: event.effect.volume,
+			audioOutputDevice: event.effect.audioOutputDevice,
+			overlayInstance: event.effect.overlayInstance
 		};
 
 		if (data.audioOutputDevice == null || data.audioOutputDevice.label === 'App Default') {
-			data.audioOutputDevice = settings.getAudioOutputDevice();
+			data.audioOutputDevice = firebot.settings.getSetting('AudioOutputDevice');
 		}
 
-		const duration = await modules.frontendCommunicator.fireEventAsync('getSoundDuration', {
+		const duration = await firebot.frontendCommunicator.fireEventAsync('getSoundDuration', {
 			path: 'file://' + data.filepath
 		}) as number;
 
@@ -110,12 +101,12 @@ const effect: EffectType<EffectModel & OverlayData> = {
 
 		// Generate token if going to overlay, otherwise send to gui.
 		if (data.audioOutputDevice.deviceId === 'overlay') {
-			data.resourceToken = modules.resourceTokenManager.storeResourcePath(
+			data.resourceToken = firebot.webServer.createResourceToken(
 				data.filepath,
 				duration
 			);
 			// send event to the overlay
-			modules.httpServer.sendToOverlay('sound', data);
+			event.sendDataToOverlay(data, effect.overlayInstance);
 		}
 		else {
 			// Send data back to media.js in the gui.
@@ -123,7 +114,7 @@ const effect: EffectType<EffectModel & OverlayData> = {
 		}
 
 		try {
-			const waitPromise = wait(durationMs).then(async function() {
+			const waitPromise = wait(durationMs).then(async function () {
 				if (effect.deleteAfterPlayback)
 					await fs.unlink(data.filepath);
 			});

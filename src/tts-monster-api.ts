@@ -1,8 +1,6 @@
+import firebot, { FrontendListener } from '@crowbartools/firebot-types';
+
 import * as fs from 'fs-extra';
-import {
-	modules
-} from './main';
-import { Readable } from 'stream';
 import { pipeline } from 'stream/promises';
 
 const ttsMonsterAPI = 'https://api.console.tts.monster';
@@ -32,29 +30,85 @@ export interface TTSMonsterVoice {
 	metadata: string;
 }
 
-export default class TTSMonster {
-	private static _instance: TTSMonster;
+class TTSMonster {
+	private apiKey: string = '';
 
-	private apiKey: string;
+	public tts_promises: Map<string, Promise<any>> = new Map();
 
-	private constructor() { }
+	public frontendListeners: FrontendListener[];
 
-	public static get instance() {
-		if (!TTSMonster._instance) {
-			TTSMonster._instance = new TTSMonster();
-		}
+	public constructor() {
 
-		return TTSMonster._instance;
+		this.frontendListeners = [
+			{
+				eventName: 'tts-monster-get-voices',
+				handler: async () => {
+					const response = {
+						error: false,
+						voices: [] as TTSMonsterVoice[]
+					};
+
+					try {
+						const {
+							show_premade_voices
+						} = (firebot.parameters.getAll() as Params);
+
+						this.setup();
+
+						const voices = await this.fetchVoices({
+							show_premade_voices
+						});
+
+						response.voices = voices;
+					}
+					catch (err) {
+						firebot.logger.error('Unable to fetch voices', err);
+						response.error = true;
+					}
+
+					return response;
+				},
+				useAsync: true
+			},
+			{
+				eventName: 'tts-monster-get-subscription-data',
+				handler: async () => {
+					const response = {
+						error: false,
+						subscriptionData: {} as TTSMonsterSubscriptionData
+					};
+
+					try {
+						this.setup();
+
+						response.subscriptionData = await this.fetchSubscriptionData();
+					}
+					catch (err) {
+						firebot.logger.error('Unable to fetch voices', err);
+						response.error = true;
+					}
+
+					return response;
+				},
+				useAsync: true
+			}
+		];
 	}
 
-	public setup(apiKey: string = '') {
-		this.apiKey = apiKey;
+	public setup(): boolean {
+		const {
+			api_key
+		} = (firebot.parameters.getAll() as Params);
+
+		this.apiKey = api_key;
 
 		if (this.apiKey === '') {
-			modules.logger.error('Missing API key');
+			firebot.logger.error('Missing API key');
 
-			return;
+			return false;
 		}
+
+		return true;
 	}
 
 	public async textToSpeech({
@@ -67,12 +121,12 @@ export default class TTSMonster {
 		message: string,
 	}) {
 		if (!fileName) {
-			modules.logger.error('Missing parameter {fileName}');
+			firebot.logger.error('Missing parameter {fileName}');
 
 			return;
 		}
 		else if (!message) {
-			modules.logger.error('Missing parameter {message}');
+			firebot.logger.error('Missing parameter {message}');
 
 			return;
 		}
@@ -105,7 +159,7 @@ export default class TTSMonster {
 			};
 		}
 		catch (err: any) {
-			modules.logger.error(err);
+			firebot.logger.error(err);
 			throw err;
 		}
 	}
@@ -141,7 +195,7 @@ export default class TTSMonster {
 			return combined_voices;
 		}
 		catch (err: any) {
-			modules.logger.error(err);
+			firebot.logger.error(err);
 			throw err;
 		}
 	}
@@ -173,8 +227,10 @@ export default class TTSMonster {
 			return subData;
 		}
 		catch (err: any) {
-			modules.logger.error(err);
+			firebot.logger.error(err);
 			throw err;
 		}
 	}
 }
+
+export const ttsMonster = new TTSMonster();
