@@ -128,6 +128,60 @@ const effect: EffectType<EffectModel & OverlayData> = {
 		catch (error) {
 			return true;
 		}
+	},
+	overlayExtension: {
+		dependencies: {
+			css: [],
+			js: []
+		},
+		event: {
+			name: 'lordmau5:tts-monster:sound',
+			onOverlayEvent: (event: any) => {
+				const data = event;
+				// @ts-ignore
+				const token = encodeURIComponent(data.resourceToken);
+				const resourcePath = `http://${window.location.hostname
+					}:7472/resource/${token}`;
+
+				// Generate UUID to use as class name.
+				// eslint-disable-next-line no-undef
+				// @ts-ignore
+				const uuid = uuidv4();
+
+				const filepath = data.isUrl ? data.url : data.filepath.toLowerCase();
+				let mediaType;
+				if (filepath.endsWith('mp3')) {
+					mediaType = 'audio/mpeg';
+				}
+				else if (filepath.endsWith('ogg')) {
+					mediaType = 'audio/ogg';
+				}
+				else if (filepath.endsWith('wav')) {
+					mediaType = 'audio/wav';
+				}
+				else if (filepath.endsWith('flac')) {
+					mediaType = 'audio/flac';
+				}
+
+				const audioElement = `<audio id="${uuid}" src="${data.isUrl ? data.url : resourcePath}" type="${mediaType}"></audio>`;
+
+				// Throw audio element on page.
+				// @ts-ignore
+				$('#wrapper').append(audioElement);
+
+				const audio = document.getElementById(uuid) as HTMLAudioElement;
+				if (audio) {
+					audio.volume = parseFloat(data.volume) / 10;
+
+					audio.oncanplay = () => audio.play();
+
+					audio.onended = () => {
+						// @ts-ignore
+						$(`#${uuid}`).remove();
+					};
+				}
+			}
+		}
 	}
 };
 

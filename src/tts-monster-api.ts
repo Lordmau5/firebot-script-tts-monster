@@ -40,7 +40,7 @@ class TTSMonster {
 	public constructor() {
 		this.frontendListeners = [
 			{
-				eventName: 'tts-monster-get-voices',
+				eventName: 'lordmau5:tts-monster:get-voices',
 				handler: async () => {
 					const response = {
 						error: false,
@@ -70,7 +70,7 @@ class TTSMonster {
 				useAsync: true
 			},
 			{
-				eventName: 'tts-monster-get-subscription-data',
+				eventName: 'lordmau5:tts-monster:get-subscription-data',
 				handler: async () => {
 					const response = {
 						error: false,

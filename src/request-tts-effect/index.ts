@@ -36,7 +36,7 @@ const effect: EffectType<EffectModel> = {
 	},
 	optionsTemplate: template,
 	optionsController: ($scope, utilityService: any, backendCommunicator: any, $q: any, $timeout: any) => {
-		$q.when(backendCommunicator.fireEventAsync('tts-monster-get-voices'))
+		$q.when(backendCommunicator.fireEventAsync('lordmau5:tts-monster:get-voices'))
 			.then(({
 				error, voices
 			}: { error: boolean, voices: TTSMonsterVoice[] }) => {
@@ -52,7 +52,7 @@ const effect: EffectType<EffectModel> = {
 			});
 
 		$scope.fetchingSubscriptionData = true;
-		$q.when(backendCommunicator.fireEventAsync('tts-monster-get-subscription-data'))
+		$q.when(backendCommunicator.fireEventAsync('lordmau5:tts-monster:get-subscription-data'))
 			.then(({
 				error, subscriptionData
 			}: { error: boolean, subscriptionData: TTSMonsterSubscriptionData }) => {
