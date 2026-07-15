@@ -37,7 +37,7 @@ export default class TTSMonster {
 
 	private apiKey: string;
 
-	private constructor() {}
+	private constructor() { }
 
 	public static get instance() {
 		if (!TTSMonster._instance) {
@@ -77,11 +77,12 @@ export default class TTSMonster {
 			return;
 		}
 
-		const ttsUrl = `${ ttsMonsterAPI }/generate`;
+		const ttsUrl = `${ttsMonsterAPI}/generate`;
 		const options = {
 			method: 'POST',
 			headers: {
 				Authorization: this.apiKey,
+				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify({
 				voice_id,
@@ -93,7 +94,7 @@ export default class TTSMonster {
 
 		try {
 			const ttsResponse = await fetch(ttsUrl, options);
-			const { url }: { url: string } = await ttsResponse.json();
+			const { url, status }: { url: string, status: string } = await ttsResponse.json();
 
 			const generatedAudio = await fetch(url);
 			await pipeline(generatedAudio.body as any, writeStream);
@@ -103,7 +104,7 @@ export default class TTSMonster {
 				fileName: fileName
 			};
 		}
-		catch (err) {
+		catch (err: any) {
 			modules.logger.error(err);
 			throw err;
 		}
@@ -118,7 +119,7 @@ export default class TTSMonster {
 	}: {
 		show_premade_voices?: boolean
 	}): Promise<TTSMonsterVoice[]> {
-		const voicesURL = `${ ttsMonsterAPI }/voices`;
+		const voicesURL = `${ttsMonsterAPI}/voices`;
 		const options = {
 			method: 'POST',
 			headers: {
@@ -139,7 +140,7 @@ export default class TTSMonster {
 
 			return combined_voices;
 		}
-		catch (err) {
+		catch (err: any) {
 			modules.logger.error(err);
 			throw err;
 		}
@@ -152,7 +153,7 @@ export default class TTSMonster {
 	}
 
 	public async fetchSubscriptionData(): Promise<TTSMonsterSubscriptionData> {
-		const subscriptionInfoURL = `${ ttsMonsterAPI }/user`;
+		const subscriptionInfoURL = `${ttsMonsterAPI}/user`;
 		const options = {
 			method: 'POST',
 			headers: {
@@ -171,7 +172,7 @@ export default class TTSMonster {
 
 			return subData;
 		}
-		catch (err) {
+		catch (err: any) {
 			modules.logger.error(err);
 			throw err;
 		}

@@ -26,7 +26,7 @@ const script: Firebot.CustomScript<Params> = {
 			name: 'TTS.Monster',
 			description: 'A custom script that allows TTS.Monster to be used in Firebot',
 			author: 'Lordmau5',
-			version: '1.0.0',
+			version: '1.0.1',
 			firebotVersion: '5'
 		};
 	},
@@ -59,7 +59,7 @@ const script: Firebot.CustomScript<Params> = {
 		settings = runRequest.firebot.settings;
 		parameters = runRequest.parameters;
 
-		modules.frontendCommunicator.onAsync('tts-monster-get-voices', async() => {
+		modules.frontendCommunicator.onAsync('tts-monster-get-voices', async () => {
 			const response = {
 				error: false,
 				voices: [] as TTSMonsterVoice[]
@@ -87,10 +87,10 @@ const script: Firebot.CustomScript<Params> = {
 			return response;
 		});
 
-		modules.frontendCommunicator.onAsync('tts-monster-get-subscription-data', async() => {
+		modules.frontendCommunicator.onAsync('tts-monster-get-subscription-data', async () => {
 			const response = {
 				error: false,
-				subscriptionData: null as TTSMonsterSubscriptionData
+				subscriptionData: {} as TTSMonsterSubscriptionData
 			};
 
 			try {
