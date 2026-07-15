@@ -23,7 +23,7 @@ const plugin: Plugin<Params> = {
 	parametersSchema: [
 		{
 			name: "api_key",
-			type: "string",
+			type: "password",
 			default: "",
 			title: "API Key",
 			description: "Your TTS.Monster API key",
